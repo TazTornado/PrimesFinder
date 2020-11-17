@@ -1,4 +1,4 @@
-# This is the secondary Makefile that handles the secondary utilities of the project #
+# This Makefile handles the programs overlaying the worker leaves of the hierarchy tree #
 
 CC=gcc
 CFLAGS=-ggdb -Wall

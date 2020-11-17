@@ -2,7 +2,8 @@
 
 IDIR =../include
 ODIR = ../obj
-SECDIR = ./secondary
+WDIR = ./Workers
+INNERDIR = ./InnerNodes
 CC = gcc
 CFLAGS = -ggdb -Wall -I$(IDIR)
 
@@ -19,7 +20,9 @@ $(ODIR)/%.o: %.c $(DEPS)
 all: utilities myprime
 
 utilities:
-	$(MAKE) -C $(SECDIR)
+	$(MAKE) -C $(WDIR)
+	$(MAKE) -C $(INNERDIR)
+
 
 myprime: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
@@ -29,4 +32,5 @@ myprime: $(OBJ)
 clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ 
 	rm -f myprime
-	cd secondary; make clean
+	cd $(WDIR); make clean
+	cd $(INNERDIR); make clean
