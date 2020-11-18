@@ -3,7 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include "dummy.h"
+
+#include "subrange.h"
+// #include "mysort"
 
 int main(int argc, char* argv[]){
 	printf("Hello this is the root.\n\n");
@@ -13,12 +15,10 @@ int main(int argc, char* argv[]){
 
 	int lflag = 0, uflag = 0, wflag = 0;
 	int ub, lb, numOfChildren;
-	char *args[4];	// vector of inline parameters for execv calls
 	while(--argc){ 
 		if(strcmp(*argv, "-l") == 0){
 			if(lflag == 0){
 				lb = atoi(*(argv + 1));
-				args[1] = strdup(*(argv + 1));
 				lflag = 1;
 			} else {
 				printf("Invalid argument.\nUsage: ./myprime -l lb -u ub -w numOfChildren\n\n");
@@ -28,7 +28,6 @@ int main(int argc, char* argv[]){
 		if(strcmp(*argv, "-u") == 0){
 			if(uflag == 0){
 				ub = atoi(*(argv + 1));
-				args[2] = strdup(*(argv + 1));
 				uflag = 1;
 			} else {
 				printf("Invalid argument.\nUsage: ./myprime -l lb -u ub -w numOfChildren\n\n");
@@ -64,6 +63,8 @@ int main(int argc, char* argv[]){
 ////////////////////* Start creating the hierarchy tree of processes *////////////////////
 
 	pid_t chpid;
+	int **subranges = getSubRange(lb, ub, numOfChildren);
+	char *args[4];	// vector of inline parameters for execv calls
 
 	for(int i = 0; i < numOfChildren; i++){
 		chpid = fork();
@@ -73,9 +74,13 @@ int main(int argc, char* argv[]){
 				exit(1);
 
 			case 0:		// child clause
-				printf("Child process with pid %lu.\n", (long)getpid());
+				// printf("Child process with pid %lu.\n", (long)getpid());
 				args[0] = malloc(sizeof("Inodes"));		// does not require free() cause of exec
 				args[0] = "Inodes";
+				args[1] = malloc(10*sizeof(char));
+				sprintf(args[1], "%d", subranges[i][0]); // append lower bound to vector of args for i-node
+				args[2] = malloc(10*sizeof(char));
+				sprintf(args[2], "%d", subranges[i][1]); // append upper bound to vector of args for i-node				
 				args[3] = NULL;
 				printf("Args for execv: %s, %s, %s\n", args[0], args[1], args[2]);
 				if(execvp("./InnerNodes/Inodes", &args[0]) == -1){
@@ -85,13 +90,19 @@ int main(int argc, char* argv[]){
 				break;
 
 			default:	// parent clause
-				printf("Parent process with pid %lu.\n", (long)getpid());
+				// printf("Parent process with pid %lu.\n", (long)getpid());
 				break;
 		}
 	}		
 
-	free(args[1]);
-	free(args[2]);
+
+////////////////////////////////////////* Free all used space and exit *////////////////////////////////////////
+
+	// free(args[1]);
+	// free(args[2]);
+	for(int i = 0; i < numOfChildren; i++)
+		free(subranges[i]);
+	free(subranges);
 	printf("Exiting now..\n");
 
 	return 0;

@@ -3,9 +3,13 @@
 CC=gcc
 CFLAGS=-ggdb -Wall
 
+IDIR =../../include
 ODIR=../../obj
 
-_OBJ = Inodes.o
+_DEPS = subrange.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+
+_OBJ = Inodes.o subrange.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
