@@ -56,35 +56,42 @@ int main(int argc, char* argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-	printf("\n\nlb = %d\n", lb);
+	printf("lb = %d\n", lb);
 	printf("ub = %d\n", ub);
 	printf("numOfChildren = %d\n", numOfChildren);
 
+
 ////////////////////* Start creating the hierarchy tree of processes *////////////////////
-	pid_t chpid = fork();
 
-	switch(chpid){
-		case -1:	// fork failure
-			perror("Failed to fork");
-			exit(1);
+	pid_t chpid;
 
-		case 0:		// child clause
-			printf("Child process with pid %lu.\n", (long)getpid());
-			args[0] = malloc(sizeof("prime1"));
-			args[0] = "prime1";
-			args[3] = NULL;
-			printf("Args for execv: %s, %s, %s\n", args[0], args[1], args[2]);
-			if(execvp("./Workers/prime1", &args[0]) == -1){
-				perror("Failed to exec prime1");
+	for(int i = 0; i < numOfChildren; i++){
+		chpid = fork();
+		switch(chpid){
+			case -1:	// fork failure
+				perror("Failed to fork");
 				exit(1);
-			};
-			break;
 
-		default:	// parent clause
-			printf("Parent process with pid %lu.\n", (long)getpid());
-			break;
+			case 0:		// child clause
+				printf("Child process with pid %lu.\n", (long)getpid());
+				args[0] = malloc(sizeof("Inodes"));		// does not require free() cause of exec
+				args[0] = "Inodes";
+				args[3] = NULL;
+				printf("Args for execv: %s, %s, %s\n", args[0], args[1], args[2]);
+				if(execvp("./InnerNodes/Inodes", &args[0]) == -1){
+					perror("Failed to exec Inodes");
+					exit(1);
+				};
+				break;
+
+			default:	// parent clause
+				printf("Parent process with pid %lu.\n", (long)getpid());
+				break;
+		}
 	}		
 
+	free(args[1]);
+	free(args[2]);
 	printf("Exiting now..\n");
 
 	return 0;
