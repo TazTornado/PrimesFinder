@@ -15,6 +15,8 @@ int main(int argc, char* argv[]){
 
 	int lflag = 0, uflag = 0, wflag = 0;
 	int ub, lb, numOfChildren;
+	char *args[5];	// vector of inline parameters for execv calls
+
 	while(--argc){ 
 		if(strcmp(*argv, "-l") == 0){
 			if(lflag == 0){
@@ -37,6 +39,8 @@ int main(int argc, char* argv[]){
 		if(strcmp(*argv, "-w") == 0){
 			if(wflag == 0){
 				numOfChildren = atoi(*(argv + 1));
+				args[3] = strdup(*(argv + 1));
+				printf("args[3] = %s\n", args[3]);
 				wflag = 1;
 			} else {
 				printf("Invalid argument.\nUsage: ./myprime -l lb -u ub -w numOfChildren\n\n");
@@ -50,7 +54,7 @@ int main(int argc, char* argv[]){
 		exit(EXIT_FAILURE);
 	}
 	if(ub < lb){
-		printf("Upper bound must be larger than lower bound!\n");
+		printf("Upper bound must be greater than lower bound!\n");
 		printf("Usage: ./myprime -l lb -u ub -w numOfChildren\n");
 		exit(EXIT_FAILURE);
 	}
@@ -64,9 +68,9 @@ int main(int argc, char* argv[]){
 
 	pid_t chpid;
 	int **subranges = getSubRange(lb, ub, numOfChildren);
-	char *args[4];	// vector of inline parameters for execv calls
 
 	for(int i = 0; i < numOfChildren; i++){
+		// TODO: create pipe here and before fork add to a vector of children pids and readfds of pipes
 		chpid = fork();
 		switch(chpid){
 			case -1:	// fork failure
@@ -75,16 +79,16 @@ int main(int argc, char* argv[]){
 
 			case 0:		// child clause
 				// printf("Child process with pid %lu.\n", (long)getpid());
-				args[0] = malloc(sizeof("Inodes"));		// does not require free() cause of exec
-				args[0] = "Inodes";
+				args[0] = malloc(sizeof("Inode"));		// does not require free() cause of exec
+				args[0] = "Inode";
 				args[1] = malloc(10*sizeof(char));
-				sprintf(args[1], "%d", subranges[i][0]); // append lower bound to vector of args for i-node
+				sprintf(args[1], "%d", subranges[i][0]);	// append lower bound to vector of args for i-node
 				args[2] = malloc(10*sizeof(char));
-				sprintf(args[2], "%d", subranges[i][1]); // append upper bound to vector of args for i-node				
-				args[3] = NULL;
+				sprintf(args[2], "%d", subranges[i][1]);	// append upper bound to args		
+				args[4] = NULL;
 				printf("Args for execv: %s, %s, %s\n", args[0], args[1], args[2]);
-				if(execvp("./InnerNodes/Inodes", &args[0]) == -1){
-					perror("Failed to exec Inodes");
+				if(execvp("../bin/Inode", &args[0]) == -1){
+					perror("Failed to exec Inode");
 					exit(1);
 				};
 				break;
@@ -99,7 +103,7 @@ int main(int argc, char* argv[]){
 ////////////////////////////////////////* Free all used space and exit *////////////////////////////////////////
 
 	// free(args[1]);
-	// free(args[2]);
+	free(args[3]);
 	for(int i = 0; i < numOfChildren; i++)
 		free(subranges[i]);
 	free(subranges);
