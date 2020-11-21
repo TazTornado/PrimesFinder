@@ -10,22 +10,22 @@
 # >> make clean		=> removes all object and all executable files			#
 #############################################################################
 
-IDIR =../include
-ODIR = ../obj
-BDIR = ../bin
+IDIR =../include/
+ODIR = ../obj/
+BDIR = ../bin/
 CC = gcc
 CFLAGS = -ggdb -Wall -I$(IDIR)
 
 
-_DEPS = subrange.h
+_DEPS = subrange.h myhandlers.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-all: Inode prime1 prime2 mytiming myprime
+all: Inode prime1 prime2 prime3 mytiming myprime
 
-Inode: $(ODIR)/Inode.o $(ODIR)/subrange.o
+Inode: $(ODIR)/Inode.o $(ODIR)/subrange.o $(ODIR)/myhandlers.o
 	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
 prime1: $(ODIR)/prime1.o
@@ -34,10 +34,13 @@ prime1: $(ODIR)/prime1.o
 prime2: $(ODIR)/prime2.o
 	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS) -lm
 
+prime3: $(ODIR)/prime3.o
+	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS) -lm
+
 mytiming: $(ODIR)/mytiming.o
 	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
-myprime: $(ODIR)/myprime.o $(ODIR)/subrange.o
+myprime: $(ODIR)/myprime.o $(ODIR)/subrange.o $(ODIR)/myhandlers.o
 	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
 .PHONY: clean
