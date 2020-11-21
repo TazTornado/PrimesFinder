@@ -2,20 +2,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/types.h>
 
 #include "subrange.h"
 // #include "mysort"
 
+int usr1_received = 0;
+
+void USR1_handler(){
+    signal(SIGUSR1, USR1_handler);
+
+    /////////////////////////////////////////////
+    // increment given counter of USR1 signals //
+    // received in invoking process => root    //
+	/////////////////////////////////////////////
+   usr1_received++;    
+}
+
+
 int main(int argc, char* argv[]){
-	printf("Hello this is the root.\n\n");
+	// printf("Hello this is the root.\n\n");
 
 
 ////////////////////* Make necessary checks and handle program parameters *////////////////////
 
 	int lflag = 0, uflag = 0, wflag = 0;
 	int ub, lb, numOfChildren;
-	char *args[5];	// vector of inline parameters for execv calls
+	char *args[7];	// vector of inline parameters for execv calls
 
 	while(--argc){ 
 		if(strcmp(*argv, "-l") == 0){
@@ -59,9 +73,9 @@ int main(int argc, char* argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-	printf("lb = %d\n", lb);
-	printf("ub = %d\n", ub);
-	printf("numOfChildren = %d\n", numOfChildren);
+	// printf("lb = %d\n", lb);
+	// printf("ub = %d\n", ub);
+	// printf("numOfChildren = %d\n", numOfChildren);
 
 
 ////////////////////* Start creating the hierarchy tree of processes *////////////////////
@@ -84,9 +98,14 @@ int main(int argc, char* argv[]){
 				args[1] = malloc(10*sizeof(char));
 				sprintf(args[1], "%d", subranges[i][0]);	// append lower bound to vector of args for i-node
 				args[2] = malloc(10*sizeof(char));
-				sprintf(args[2], "%d", subranges[i][1]);	// append upper bound to args		
-				args[4] = NULL;
-				printf("Args for execv: %s, %s, %s\n", args[0], args[1], args[2]);
+				sprintf(args[2], "%d", subranges[i][1]);	// append upper bound to args	
+				// args[3] is the numOfChildren
+				args[4] = malloc(10*sizeof(char));
+				sprintf(args[4], "%d", i);					// append to args, the index of Inode in level 1 of hierarchy 	
+				args[5] = NULL;	
+				// args[5] = pipefd;
+				args[6] = NULL;
+				// printf("Args for execv: %s, %s, %s\n", args[0], args[1], args[2]);
 				if(execvp("../bin/Inode", &args[0]) == -1){
 					perror("Failed to exec Inode");
 					exit(1);

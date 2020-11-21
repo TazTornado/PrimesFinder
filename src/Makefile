@@ -17,7 +17,7 @@ CC = gcc
 CFLAGS = -ggdb -Wall -I$(IDIR)
 
 
-_DEPS = subrange.h myhandlers.h
+_DEPS = subrange.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 $(ODIR)/%.o: %.c $(DEPS)
@@ -25,7 +25,7 @@ $(ODIR)/%.o: %.c $(DEPS)
 
 all: Inode prime1 prime2 prime3 mytiming myprime
 
-Inode: $(ODIR)/Inode.o $(ODIR)/subrange.o $(ODIR)/myhandlers.o
+Inode: $(ODIR)/Inode.o $(ODIR)/subrange.o
 	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
 prime1: $(ODIR)/prime1.o
@@ -40,7 +40,7 @@ prime3: $(ODIR)/prime3.o
 mytiming: $(ODIR)/mytiming.o
 	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
-myprime: $(ODIR)/myprime.o $(ODIR)/subrange.o $(ODIR)/myhandlers.o
+myprime: $(ODIR)/myprime.o $(ODIR)/subrange.o
 	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
 .PHONY: clean

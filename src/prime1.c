@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #define YES 1
 #define NO  0
 
+
+// O(n^2)
 int prime(int n){
 		int i;
 		if (n==1) return(NO);

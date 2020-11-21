@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <signal.h>
 
 #define YES 1
 #define NO  0
 
+
+// O(n*sqrt(n))
 int prime(int n){
         int i=0, limitup=0;
         limitup = (int)(sqrt((float)n));
