@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/times.h> 
 // #include <sys/types.h>
 #include "subrange.h"
 // #include "mysort.h"

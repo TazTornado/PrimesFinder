@@ -4,6 +4,9 @@
 #include <signal.h>
 #include <string.h>
 #include <math.h>
+#include <sys/times.h>
+
+#include "datatypes.h"
 
 #define YES '1'
 #define NO '0'
@@ -19,10 +22,10 @@ char *EratosthenesSieve(int lb, int ub){
 	memset(sieve + (ub+1), '\0', 1);		// only to copy this as a string later
 
 
-	sieve[0] = sieve[1] = NO;		// exclude 0 and 1 from primes
+	sieve[0] = sieve[1] = NO;			// exclude 0 and 1 from primes
 	for(i = 2; i <= new_upper; i++){	// up to sqrt(ub)
 		 if(sieve[i] == YES){
-			 for(j = i*i; j <= ub; j+=i){
+			 for(j = i*i; j <= ub; j+=i){	// up to ub
 				sieve[j] = NO;
 			 }
 		 }
@@ -41,24 +44,43 @@ char *EratosthenesSieve(int lb, int ub){
 
 
 int main(int argc, char *argv[]){
-		int lb=0, ub=0, i=0;
+	int lb=0, ub=0, i=0;
 
-		if ( (argc != 3) ){
-				printf("usage: prime3 lb ub\n");
-				exit(1); }
+	if ( (argc != 3) ){
+		printf("usage: prime3 lb ub\n");
+		exit(1); }
 
-		lb=atoi(argv[1]);
-		ub=atoi(argv[2]);
+	lb=atoi(argv[1]);
+	ub=atoi(argv[2]);
 
-		if ( ( lb<1 )  || ( lb > ub ) ) {
-				printf("usage: prime3 lb ub\n");
-				exit(1); }
+	if ( ( lb<1 )  || ( lb > ub ) ) {
+		printf("usage: prime3 lb ub\n");
+		exit(1); }
 
-		char *marked = EratosthenesSieve(lb, ub);
-		for(i = 0; i < (ub - lb + 1); i++){
-			if(marked[i] == YES)
-				printf("%d\n", (i + lb));
+
+	double t1, t2, total, sieving_time = 0.0;
+	struct tms tb1, tb2;
+	double ticspersec;
+	ticspersec = (double) sysconf(_SC_CLK_TCK);
+
+	t1 = (double) times(&tb1);
+	char *marked = EratosthenesSieve(lb, ub);
+	t2 = (double) times(&tb2);
+	total = sieving_time = ((t2 - t1) / ticspersec) * 1000.0;	// sieving only happens once,
+																// thus contained once in total time
+	printf("Sieving took %f, or %f msec\n\n", total, sieving_time);
+	t1 = (double) times(&tb1);	
+	for(i = 0; i < (ub - lb + 1); i++){
+		if(marked[i] == YES){
+			t2 = (double) times(&tb2);			
+			InfoChunk chunk;		// create struct to write to pipe
+			chunk.prime = i;
+			chunk.time = (((t2 - t1) / ticspersec) * 1000.0) + sieving_time;	// prime time = sieving time + checking-if-prime time
+			total += chunk.time - sieving_time;							// calculating total search time prime-by-prime
+			chunk.total_time = total;						// only the last chunk's total time will be used
+			printf("prime struct: %d, %f, %f \n", chunk.prime, chunk.time, chunk.total_time);
 		}
+	}
 
-		free(marked);
+	free(marked);
 }

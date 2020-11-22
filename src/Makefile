@@ -18,33 +18,41 @@ CC = gcc
 CFLAGS = -ggdb -Wall -I$(IDIR)
 
 
-_DEPS = subrange.h
+_DEPS = subrange.h datatypes.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 $(ODIR)/%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	@$(CC) -c -o $@ $< $(CFLAGS)
 
-all: Inode prime1 prime2 prime3 mytiming myprime
+all: Inode prime1 prime2 prime3 myprime
 
-Inode: $(ODIR)/Inode.o $(ODIR)/subrange.o
-	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
+Inode: $(ODIR)/Inode.o $(ODIR)/subrange.o 
+	@echo creating Inode..
+	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
 prime1: $(ODIR)/prime1.o
-	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
+	@echo creating prime1..
+	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
 prime2: $(ODIR)/prime2.o
-	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS) -lm
+	@echo creating prime2..
+	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS) -lm
 
 prime3: $(ODIR)/prime3.o
-	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS) -lm
+	@echo creating prime3..
+	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS) -lm
 
-mytiming: $(ODIR)/mytiming.o
-	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
+# mytiming: $(ODIR)/mytiming.o
+# 	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
+# 	@echo creating Inode..
 
-myprime: $(ODIR)/myprime.o $(ODIR)/subrange.o
-	$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
+myprime: $(ODIR)/myprime.o $(ODIR)/subrange.o 
+	@echo creating myprime..
+	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ $(BDIR)/*
+	@echo Removing object files and executable files
+	@rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ $(BDIR)/*
+	@echo Done!

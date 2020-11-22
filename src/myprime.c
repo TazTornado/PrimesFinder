@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/times.h> 
 
 #include "subrange.h"
 // #include "mysort"
