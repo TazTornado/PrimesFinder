@@ -42,10 +42,6 @@ prime3: $(ODIR)/prime3.o
 	@echo creating prime3..
 	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS) -lm
 
-# mytiming: $(ODIR)/mytiming.o
-# 	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)
-# 	@echo creating Inode..
-
 myprime: $(ODIR)/myprime.o $(ODIR)/subrange.o 
 	@echo creating myprime..
 	@$(CC) -o $(BDIR)/$@ $^ $(CFLAGS)

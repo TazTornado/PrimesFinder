@@ -5,25 +5,23 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/times.h> 
-
+#include <sys/wait.h>
 #include "subrange.h"
-// #include "mysort"
+#include "datatypes.h"
 
+#define BUFFSIZE sizeof(InfoChunk)
 int usr1_received = 0;
 
 void USR1_handler(){
     signal(SIGUSR1, USR1_handler);
-
-    /////////////////////////////////////////////
-    // increment given counter of USR1 signals //
-    // received in invoking process => root    //
-	/////////////////////////////////////////////
-   usr1_received++;    
+						/////////////////////////////////////////////
+	 usr1_received++;	// increment given counter of USR1 signals //
+						// received in invoking process => root    //
+						/////////////////////////////////////////////
 }
 
 
 int main(int argc, char* argv[]){
-	// printf("Hello this is the root.\n\n");
 
 
 ////////////////////* Make necessary checks and handle program parameters *////////////////////
@@ -55,7 +53,6 @@ int main(int argc, char* argv[]){
 			if(wflag == 0){
 				numOfChildren = atoi(*(argv + 1));
 				args[3] = strdup(*(argv + 1));
-				printf("args[3] = %s\n", args[3]);
 				wflag = 1;
 			} else {
 				printf("Invalid argument.\nUsage: ./myprime -l lb -u ub -w numOfChildren\n\n");
@@ -74,18 +71,27 @@ int main(int argc, char* argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-	// printf("lb = %d\n", lb);
-	// printf("ub = %d\n", ub);
-	// printf("numOfChildren = %d\n", numOfChildren);
-
 
 ////////////////////* Start creating the hierarchy tree of processes *////////////////////
 
+	signal(SIGUSR1, USR1_handler);
 	pid_t chpid;
 	int **subranges = getSubRange(lb, ub, numOfChildren);
+	int pipefds[numOfChildren][2];		// all pipe file descriptors for communication will be kept here
+	int tempfd[2];						// this will temporarily hold what pipe() returns
+	InfoChunk readbuf;
+	int status;							// for use in wait()
 
 	for(int i = 0; i < numOfChildren; i++){
-		// TODO: create pipe here and before fork add to a vector of children pids and readfds of pipes
+		if(pipe(tempfd) == -1){
+			printf("Failed to open pipe for worker %d ", i);
+			perror("");
+			exit(1);
+		}
+
+		pipefds[i][0] = tempfd[0];		// save readfd
+		pipefds[i][1] = tempfd[1];		// save writefd
+
 		chpid = fork();
 		switch(chpid){
 			case -1:	// fork failure
@@ -93,20 +99,19 @@ int main(int argc, char* argv[]){
 				exit(1);
 
 			case 0:		// child clause
-				// printf("Child process with pid %lu.\n", (long)getpid());
 				args[0] = malloc(sizeof("Inode"));		// does not require free() cause of exec
 				args[0] = "Inode";
 				args[1] = malloc(10*sizeof(char));
 				sprintf(args[1], "%d", subranges[i][0]);	// append lower bound to vector of args for i-node
 				args[2] = malloc(10*sizeof(char));
 				sprintf(args[2], "%d", subranges[i][1]);	// append upper bound to args	
-				// args[3] is the numOfChildren
+				/* args[3] is the numOfChildren */
 				args[4] = malloc(10*sizeof(char));
 				sprintf(args[4], "%d", i);					// append to args, the index of Inode in level 1 of hierarchy 	
-				args[5] = NULL;	
-				// args[5] = pipefd;
+				args[5] = malloc(10*sizeof(char));			
+				sprintf(args[5], "%d", pipefds[i][1]);		// append writefd to args	
 				args[6] = NULL;
-				// printf("Args for execv: %s, %s, %s\n", args[0], args[1], args[2]);
+
 				if(execvp("../bin/Inode", &args[0]) == -1){
 					perror("Failed to exec Inode");
 					exit(1);
@@ -114,20 +119,45 @@ int main(int argc, char* argv[]){
 				break;
 
 			default:	// parent clause
-				// printf("Parent process with pid %lu.\n", (long)getpid());
+				close(pipefds[i][1]);	// close write end
 				break;
 		}
 	}		
 
+	while((chpid = wait(&status)) > 0); 	// wait for all workers to finish
+
+////////////////////////////////////////* Gather Information and Print Data *////////////////////////////////////////
+	
+	int workers_activated = 0;
+	int read_data = 0;
+	double max_worker = 0.0, min_worker = 3000.0;					
+
+	printf("Primes in [%d,%d] are:\n", lb, ub);
+	printf("-------------------------------\n");
+
+	for(int i = 0; i < numOfChildren; i++){
+			while((read_data = read(pipefds[i][0], &readbuf, BUFFSIZE)) != 0){
+				printf("Result: %d	Time: %f msecs\n", readbuf.prime, readbuf.time);
+				if(readbuf.total_time < min_worker)
+					min_worker = readbuf.total_time;
+				if(readbuf.total_time > max_worker)
+					max_worker = readbuf.total_time;
+				workers_activated++;
+			}
+			close(pipefds[i][0]);		
+		}
+		printf("-------------------------------\n");
+
+	printf("Min Time for Workers : %f msecs\n", min_worker);
+	printf("Max Time for Workers : %f msecs\n", max_worker);
+	printf("Num of USR1 Received : %d/%d\n", usr1_received, workers_activated);
 
 ////////////////////////////////////////* Free all used space and exit *////////////////////////////////////////
 
-	// free(args[1]);
 	free(args[3]);
 	for(int i = 0; i < numOfChildren; i++)
 		free(subranges[i]);
 	free(subranges);
-	printf("Exiting now..\n");
 
 	return 0;
 }

@@ -3,29 +3,34 @@
 #include <signal.h>
 #include <sys/times.h>
 #include <unistd.h>
-
 #include "datatypes.h"
 
 #define YES 1
 #define NO  0
-
+#define BUFFSIZE sizeof(InfoChunk)
 
 // O(n^2)
 int prime(int n){
-		int i;
-		if (n==1) return(NO);
-		for (i=2 ; i<n ; i++)
-				if ( n % i == 0) return(NO);
-		return(YES);
+	int i;
+	if (n==1) return(NO);
+	for (i=2 ; i<n ; i++)
+		if ( n % i == 0) return(NO);
+	return(YES);
 }
 
 int main(int argc, char *argv[]){
-	int lb=0, ub=0, i=0;
+	int lb=0, ub=0 ,i=0; 
+	int writefd = STDOUT_FILENO;	// initialized to the fd of stdout, in case there is no pipefd arg
 
-	if ( (argc != 3) ){
+	if ( (argc < 3) ){
 		printf("usage: prime1 lb ub\n");
-		exit(1); }
+		exit(1); 
+	}
 
+	if(argc == 4){
+		writefd = atoi(argv[3]);
+	}
+	
 	lb=atoi(argv[1]);
 	ub=atoi(argv[2]);
 
@@ -42,13 +47,22 @@ int main(int argc, char *argv[]){
 	for (i=lb ; i <= ub ; i++){
 		if ( prime(i)==YES ){
 			t2 = (double) times(&tb2);
+
 			InfoChunk chunk;		// create struct to write to pipe
 			chunk.prime = i;
 			chunk.time = ((t2 - t1) / ticspersec) * 1000.0;	// convert sec to msec
 			total += chunk.time;							// calculating total search time prime-by-prime
 			chunk.total_time = total;						// only the last chunk's total time will be used
-			printf("prime struct: %d, %f, %f \n", chunk.prime, chunk.time, chunk.total_time);
+
+			if(write(writefd, &chunk, BUFFSIZE) == -1){
+				printf("Worker prime1 failed to write in %d\n", writefd);
+				perror("write failure");
+				exit(1);
+			}
 		}
 	}
-	printf("\n");
+	close(writefd);
+	kill(getppid(), SIGUSR1);
+	// printf("Prime1 worker exiting now..\n");
+	return 0;
 }

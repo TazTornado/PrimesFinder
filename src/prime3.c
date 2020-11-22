@@ -5,11 +5,12 @@
 #include <string.h>
 #include <math.h>
 #include <sys/times.h>
-
 #include "datatypes.h"
 
 #define YES '1'
 #define NO '0'
+#define BUFFSIZE sizeof(InfoChunk)
+
 
 
 // O(n*log(logn))
@@ -44,11 +45,17 @@ char *EratosthenesSieve(int lb, int ub){
 
 
 int main(int argc, char *argv[]){
-	int lb=0, ub=0, i=0;
+	int lb=0, ub=0 ,i=0; 
+	int writefd = STDOUT_FILENO;	// initialized to the fd of stdout, in case there is no pipefd arg
 
-	if ( (argc != 3) ){
+	if ( (argc < 3) ){
 		printf("usage: prime3 lb ub\n");
-		exit(1); }
+		exit(1); 
+	}
+
+	if(argc == 4){
+		writefd = atoi(argv[3]);
+	}
 
 	lb=atoi(argv[1]);
 	ub=atoi(argv[2]);
@@ -68,19 +75,29 @@ int main(int argc, char *argv[]){
 	t2 = (double) times(&tb2);
 	total = sieving_time = ((t2 - t1) / ticspersec) * 1000.0;	// sieving only happens once,
 																// thus contained once in total time
-	printf("Sieving took %f, or %f msec\n\n", total, sieving_time);
 	t1 = (double) times(&tb1);	
 	for(i = 0; i < (ub - lb + 1); i++){
 		if(marked[i] == YES){
-			t2 = (double) times(&tb2);			
+			t2 = (double) times(&tb2);
+
 			InfoChunk chunk;		// create struct to write to pipe
-			chunk.prime = i;
+			chunk.prime = i + lb;
 			chunk.time = (((t2 - t1) / ticspersec) * 1000.0) + sieving_time;	// prime time = sieving time + checking-if-prime time
 			total += chunk.time - sieving_time;							// calculating total search time prime-by-prime
 			chunk.total_time = total;						// only the last chunk's total time will be used
-			printf("prime struct: %d, %f, %f \n", chunk.prime, chunk.time, chunk.total_time);
+			
+			if(write(writefd, &chunk, BUFFSIZE) == -1){
+				printf("Worker prime1 failed to write in %d\n", writefd);
+				perror("write failure");
+				exit(1);
+			}
 		}
 	}
 
+	close(writefd);
+	kill(getppid(), SIGUSR1);
 	free(marked);
+	// printf("Prime3 worker exiting..\n");
+	return 0;
+
 }

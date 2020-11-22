@@ -18,8 +18,8 @@ int **getSubRange(int lower, int upper, int n){
 		subranges[i] = malloc(2*sizeof(int));			
 	}													
 
-	int range_size = upper - lower + 1;	// length of given range in ints
-	int subrange_size = range_size / n - 1;	    // minimum subrange length 
+	int range_size = upper - lower + 1;	    // length of given range in ints
+	int subrange_size = range_size / n - 1;	// minimum subrange length 
 	int extra_bit = range_size % n; 		// some subranges will grow if there is remainder
     int newlow = lower;                     // first lower bound will be equal to lower
     
